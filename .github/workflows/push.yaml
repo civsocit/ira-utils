@@ -1,0 +1,23 @@
+name: test-build-docker
+on: push
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install dependencies
+        run: |
+          python -m pip poetry
+          poetry install
+      - name: Build
+        run: |
+          poetry run pyinstaller main.py --clean -F
+      - name: Upload package
+        uses: actions/upload-artifact@v2
+        with:
+          name: script
+          path: dist/main.exe
