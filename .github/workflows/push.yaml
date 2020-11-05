@@ -1,7 +1,7 @@
-name: test-build-docker
+name: package-builder
 on: push
 jobs:
-  test:
+  build:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
@@ -19,5 +19,5 @@ jobs:
       - name: Upload package
         uses: actions/upload-artifact@v2
         with:
-          name: script
+          name: ira-win-${{ steps.date.outputs.date }}
           path: dist/main.exe
