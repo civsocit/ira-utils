@@ -11,11 +11,11 @@ jobs:
           python-version: 3.8
       - name: Install dependencies
         run: |
-          python -m pip poetry
-          poetry install
+          python -m pip install poetry
+          python -m poetry install
       - name: Build
         run: |
-          poetry run pyinstaller main.py --clean -F
+          python -m poetry run pyinstaller main.py --clean -F
       - name: Upload package
         uses: actions/upload-artifact@v2
         with:
