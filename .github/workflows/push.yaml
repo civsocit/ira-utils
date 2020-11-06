@@ -16,6 +16,9 @@ jobs:
       - name: Build
         run: |
           python -m poetry run pyinstaller main.py --clean -F
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
       - name: Upload package
         uses: actions/upload-artifact@v2
         with:
