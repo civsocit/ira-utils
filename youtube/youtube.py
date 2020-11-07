@@ -5,7 +5,7 @@ import asyncio
 from asyncio import get_event_loop
 from dataclasses import dataclass
 from datetime import datetime
-from typing import AsyncGenerator, List, Optional
+from typing import AsyncGenerator, Dict, List, Optional
 
 from aiohttp import ClientSession
 
@@ -27,7 +27,7 @@ class Comment:
     id: str
 
 
-class SessionWrap(ClientSession):
+class _SessionWrap(ClientSession):
     """
     Этот класс может пригодиться для отладки расходов по квотам API.
     Он считает количество обращений по ссылке и собирает статистику.
@@ -35,17 +35,22 @@ class SessionWrap(ClientSession):
 
     def __init__(self, *args, **kwargs):
         self._calls = {}
-        super(SessionWrap, self).__init__(*args, **kwargs)
+        super(_SessionWrap, self).__init__(*args, **kwargs)
 
     def get(self, link, *args, **kwargs):
         if link not in self._calls:
             self._calls[link] = 0
         self._calls[link] += 1
-        return super(SessionWrap, self).get(link, *args, **kwargs)
+        return super(_SessionWrap, self).get(link, *args, **kwargs)
 
     @property
     def stat(self):
         return self._calls
+
+
+class YouTubeError(Exception):
+    def __init__(self, code: int, message: str):
+        super(YouTubeError, self).__init__(message + " (error code " + str(code) + ")")
 
 
 class YouTubeApi:
@@ -57,6 +62,19 @@ class YouTubeApi:
         """
         self._session = session
         self._key = key
+
+    async def _api_get(self, link: str, params: Optional[Dict] = None) -> Dict:
+        """
+        Отправить get-запрос и проверить JSON на ошибки
+        :param link: ссылка
+        :return: json словарь
+        """
+        async with self._session.get(link, params=params) as resp:
+            data = await resp.json()
+        if "error" in data:
+            raise YouTubeError(data["error"]["code"], data["error"]["message"])
+
+        return data
 
     async def list_videos(
         self, channel: str, date_clamp: Optional[datetime] = None
@@ -71,8 +89,9 @@ class YouTubeApi:
         params = {"key": self._key, "maxResults": 500, "channelId": channel}
         if date_clamp:
             params["publishedAfter"] = date_clamp.isoformat() + "Z"
-        async with self._session.get(link, params=params) as resp:
-            data = await resp.json()
+
+        data = await self._api_get(link, params)
+
         return [
             ChannelVideo(channel, video["id"]["videoId"])
             for video in data["items"]
@@ -123,8 +142,9 @@ class YouTubeApi:
         }
         if page_id:
             params["pageToken"] = page_id
-        async with self._session.get(link, params=params) as resp:
-            data = await resp.json()
+
+        data = await self._api_get(link, params)
+
         for raw_comment in data["items"]:
             yield self.__to_comment(raw_comment, channel, video)
         if (
@@ -155,8 +175,9 @@ class YouTubeApi:
         }
         if page_id:
             params["pageToken"] = page_id
-        async with self._session.get(link, params=params) as resp:
-            data = await resp.json()
+
+        data = await self._api_get(link, params)
+
         for raw_comment in data["items"]:
             yield self.__to_comment(raw_comment, channel, video)
             replies = raw_comment["snippet"]["totalReplyCount"]
@@ -198,7 +219,7 @@ async def process_video(channel: str, video: str, api: YouTubeApi):
 
 
 async def main():
-    async with SessionWrap() as session:
+    async with _SessionWrap() as session:
         api = YouTubeApi(Settings.api_key(), session)
         channel = "UCWjEiMNZv4g3P9BWbrtMjyA"
         videos = await api.list_videos(channel)
