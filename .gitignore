@@ -1,5 +1,9 @@
-# Конфигурационные файлы
+# Конфигурационные и выходные файлы
 channels.txt
+stat.csv
+
+# PyCharm
+.idea
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
