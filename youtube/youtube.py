@@ -74,7 +74,9 @@ class YouTubeApi:
         async with self._session.get(link, params=params) as resp:
             data = await resp.json()
         return [
-            ChannelVideo(channel, video["id"]["videoId"]) for video in data["items"]
+            ChannelVideo(channel, video["id"]["videoId"])
+            for video in data["items"]
+            if "video" in video["id"]["kind"]
         ]
 
     @classmethod
@@ -133,7 +135,7 @@ class YouTubeApi:
             ):
                 yield comment
 
-    async def list_comments_api(
+    async def list_comments(
         self, video: str, channel: str, page_id: Optional[str] = None
     ) -> AsyncGenerator:
         """
@@ -164,6 +166,7 @@ class YouTubeApi:
                 ):  # Записать дочерние комментарии
                     for raw_child_comment in raw_comment["replies"]["comments"]:
                         yield self.__to_comment(raw_child_comment, channel, video)
+                # TODO: Здесь возможна оптимизация, тянуть дочерние комментарии через gather
                 else:  # Дочерних комментариев так много, что нужно отдельно загрузить их
                     async for child in self.list_child_comments(
                         raw_comment["id"], channel, video
@@ -172,15 +175,24 @@ class YouTubeApi:
         if (
             "nextPageToken" in data
         ):  # Комментариев много, нужно скачать их со следующей страницы
-            async for comment in self.list_comments_api(
+            async for comment in self.list_comments(
                 video, channel, data["nextPageToken"]
             ):
                 yield comment
 
+    async def list_comments_full_list(self, video: str, channel: str) -> List[Comment]:
+        """
+        То же, что и list_comments, но стащить сразу весь лист, без генераторов
+        """
+        comments = []
+        async for comment in self.list_comments(video, channel):
+            comments.append(comment)
+        return comments
+
 
 async def process_video(channel: str, video: str, api: YouTubeApi):
     comments = []
-    async for comment in api.list_comments_api(video, channel=channel):
+    async for comment in api.list_comments(video, channel=channel):
         comments.append(comment)
     print("Comments for " + video + " " + str(len(comments)))
 
@@ -188,7 +200,7 @@ async def process_video(channel: str, video: str, api: YouTubeApi):
 async def main():
     async with SessionWrap() as session:
         api = YouTubeApi(Settings.api_key(), session)
-        channel = "UCMCgOm8GZkHp8zJ6l7_hIuA"
+        channel = "UCWjEiMNZv4g3P9BWbrtMjyA"
         videos = await api.list_videos(channel)
         videos = videos[:3]
 

@@ -1,3 +1,3 @@
-from .bot_list import Bot, BotList
+from .bot_list import AntiIraApi, Bot
 
-__all__ = ["Bot", "BotList"]
+__all__ = ["Bot", "AntiIraApi"]
