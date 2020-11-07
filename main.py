@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from datetime import date, datetime
 from itertools import chain
 from statistics import export_statistics, get_statistics
@@ -33,7 +34,12 @@ async def main(api_key: str, video_date: date):
         tasks = [
             youtube_api.list_videos(channel, video_datetime) for channel in channels
         ]
-        videos: Iterable[ChannelVideo] = chain(*await asyncio.gather(*tasks))
+        videos_groups = await asyncio.gather(*tasks)
+        for channel, videos_in_channel in zip(channels, videos_groups):
+            logging.info(
+                "Channel " + channel + " has " + str(len(videos_in_channel)) + " videos"
+            )
+        videos: Iterable[ChannelVideo] = chain(*videos_groups)
 
         # Теперь найти комментарии под каждым видео
         tasks = [
@@ -42,9 +48,9 @@ async def main(api_key: str, video_date: date):
         ]
         comments: Iterable[Comment] = chain(*await asyncio.gather(*tasks))
 
-    print("Total channels: " + str(len(channels)))
-    print("Total comments: " + str(len([c for c in comments])))
-    print("Total videos: " + str(len([v for v in videos])))
+    logging.info("Total channels: " + str(len(channels)))
+    logging.info("Total comments: " + str(len([c for c in comments])))
+    logging.info("Total videos: " + str(len([v for v in videos])))
 
     # Теперь собрать статистику по комментариям!
     stat = get_statistics(comments, bot_list)
@@ -52,17 +58,25 @@ async def main(api_key: str, video_date: date):
     # И экспортировать её
     export_statistics(stat, "stat.csv")
 
+    logging.info("Done")
+
 
 def run_callback(window: Gui):
     """
     Callback для кнопки "начать" в gui
     """
+    # Запретить повторный запуск
+    window.disable()
+
     loop = asyncio.get_event_loop()
+
     # Добавить задачу на выгрузку данных
     loop.create_task(main(window.api, window.date))
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+
     loop = asyncio.get_event_loop()
 
     gui = Gui(run_callback)

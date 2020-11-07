@@ -5,6 +5,8 @@ from typing import Callable
 
 from tkcalendar import DateEntry
 
+from settings import Settings
+
 
 class Gui:
     interval = 0.3  # Период обновления окна в секундах
@@ -24,12 +26,17 @@ class Gui:
         label["text"] = "Google API ключ:"
         label.pack()
 
-        self._api = tk.Entry(master=self._root, width=40)
-        self._api.pack()
+        self._api = tk.StringVar()
+        tk.Entry(master=self._root, textvariable=self._api, width=40).pack()
+        self._api.set(Settings.api_key())
 
-        tk.Button(
+        self._start_btn = tk.Button(
             master=self._root, text="Начать", command=lambda: run_callback(self)
-        ).pack()
+        )
+        self._start_btn.pack()
+
+    def disable(self):
+        self._start_btn.config(state=tk.DISABLED)
 
     @property
     def date(self) -> date:

@@ -46,4 +46,8 @@ class AntiIraApi:
         if not isfile(filename):
             raise ValueError("Файл channels.txt со списком каналов должен лежать рядом")
         with open(filename, "r") as file:
-            return file.readlines()
+            return [
+                line.strip()
+                for line in file.readlines()
+                if line and not line.startswith("#")
+            ]
