@@ -48,10 +48,6 @@ async def main(api_key: str, video_date: date):
         ]
         comments: Iterable[Comment] = chain(*await asyncio.gather(*tasks))
 
-    logging.info("Total channels: " + str(len(channels)))
-    logging.info("Total comments: " + str(len([c for c in comments])))
-    logging.info("Total videos: " + str(len([v for v in videos])))
-
     # Теперь собрать статистику по комментариям!
     stat = get_statistics(comments, bot_list)
 
@@ -74,12 +70,21 @@ def run_callback(window: Gui):
     loop.create_task(main(window.api, window.date))
 
 
+def close_callback():
+    """
+    Callback для кнопки "закрыть" gui
+    :return:
+    """
+    loop = asyncio.get_event_loop()
+    loop.stop()
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     loop = asyncio.get_event_loop()
 
-    gui = Gui(run_callback)
+    gui = Gui(run_callback, close_callback)
     # Добавить задачу на работу интерфейса главного окна
     loop.create_task(gui.run())
 

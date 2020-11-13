@@ -11,7 +11,7 @@ from settings import Settings
 class Gui:
     interval = 0.3  # Период обновления окна в секундах
 
-    def __init__(self, run_callback: Callable):
+    def __init__(self, run_callback: Callable, close_callback: Callable):
         self._root = tk.Tk()
         self._root.wm_title("YouTube статистика")
 
@@ -34,6 +34,8 @@ class Gui:
             master=self._root, text="Начать", command=lambda: run_callback(self)
         )
         self._start_btn.pack()
+
+        self._root.protocol("WM_DELETE_WINDOW", close_callback)
 
     def disable(self):
         self._start_btn.config(state=tk.DISABLED)

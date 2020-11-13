@@ -50,7 +50,17 @@ class _SessionWrap(ClientSession):
 
 class YouTubeError(Exception):
     def __init__(self, code: int, message: str):
+        self._code = code
+        self._message = message
         super(YouTubeError, self).__init__(message + " (error code " + str(code) + ")")
+
+    @property
+    def message(self):
+        return self._message
+
+    @property
+    def code(self):
+        return self._code
 
 
 class YouTubeApi:
@@ -176,7 +186,13 @@ class YouTubeApi:
         if page_id:
             params["pageToken"] = page_id
 
-        data = await self._api_get(link, params)
+        try:
+            data = await self._api_get(link, params)
+        except YouTubeError as err:
+            # Комментарии отключены
+            if "disabled comments" in err.message:
+                return
+            raise
 
         for raw_comment in data["items"]:
             yield self.__to_comment(raw_comment, channel, video)
