@@ -54,8 +54,8 @@ def export_statistics(stat: Statistics, path: str):
     :param path: файл таблицы
     :return:
     """
-    with open(path, "w") as file:
-        writer = csv.writer(file, delimiter="\t", encoding="utf-8")
+    with open(path, "w", encoding="utf-8") as file:
+        writer = csv.writer(file, delimiter="\t")
         writer.writerow(["user_id", "channel", "comments"])
         for user, channels in stat.items():
             for channel, count in channels.items():
