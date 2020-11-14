@@ -87,26 +87,43 @@ class YouTubeApi:
         return data
 
     async def list_videos(
-        self, channel: str, date_clamp: Optional[datetime] = None
+        self,
+        channel: str,
+        date_clamp: Optional[datetime] = None,
+        page_id: Optional[str] = None,
     ) -> List[ChannelVideo]:
         """
         Получить все видео для указанного канала
         :param channel: идентификатор канала
         :param date_clamp: дата, начиная с которой смотреть видео
+        :param page_id: идентификатор страницы загрузки (нужно в рекурсии для многостраничной загрузки, если
+                        видео много)
         :return: Список видео
         """
         link = "https://www.googleapis.com/youtube/v3/search"
         params = {"key": self._key, "maxResults": 500, "channelId": channel}
+
         if date_clamp:
             params["publishedAfter"] = date_clamp.isoformat() + "Z"
+        if page_id:
+            params["pageToken"] = page_id
 
         data = await self._api_get(link, params)
 
-        return [
+        videos = [
             ChannelVideo(channel, video["id"]["videoId"])
             for video in data["items"]
             if "video" in video["id"]["kind"]
         ]
+
+        if (
+            "nextPageToken" in data
+        ):  # Видео много, нужно скачать их со следующей страницы
+            return videos + await self.list_videos(
+                channel, date_clamp, data["nextPageToken"]
+            )
+
+        return videos
 
     @classmethod
     def __to_comment(cls, data, channel: str, video: str) -> Comment:
