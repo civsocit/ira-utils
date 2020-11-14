@@ -1,3 +1,4 @@
+import asyncio
 import re
 from dataclasses import dataclass
 from datetime import date
@@ -24,17 +25,23 @@ class AntiIraApi:
         """
         self._session = session
 
+    async def _request(self, link: str) -> str:
+        async with self._session.get(link) as resp:
+            return await resp.text()
+
     async def get_bot_list(self) -> List[Bot]:
         """
         Получить список известных youtube кремлеботов
         :return: Список ботов
         """
-        async with self._session.get(Settings.bot_list_link()) as resp:
-            text = await resp.text()
-            return [
-                Bot(r[0], date.fromisoformat(r[1]))
-                for r in re.findall(r"(?P<id>UC.+)=(?P<date>\d\d\d\d-\d\d-\d\d)", text)
-            ]
+        texts = await asyncio.gather(
+            *[self._request(link) for link in Settings.bot_list_links()]
+        )
+        text = "\n".join(texts)
+        return [
+            Bot(r[0], date.fromisoformat(r[1]))
+            for r in re.findall(r"(?P<id>UC.+)=(?P<date>\d\d\d\d-\d\d-\d\d)", text)
+        ]
 
     @classmethod
     def get_channels_list(cls) -> List[str]:
@@ -51,3 +58,15 @@ class AntiIraApi:
                 for line in file.readlines()
                 if line and not line.startswith("#")
             ]
+
+
+async def main():
+    async with ClientSession() as session:
+        api = AntiIraApi(session)
+        bots = await api.get_bot_list()
+        print(bots)
+
+
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
