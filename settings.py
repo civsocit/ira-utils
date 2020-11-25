@@ -1,9 +1,10 @@
 from os import getenv
 from typing import Iterable
 
-from dotenv import load_dotenv
+from dotenv import find_dotenv, load_dotenv
 
-load_dotenv()
+dotenv_path = find_dotenv(".env") or find_dotenv("environment.env")
+load_dotenv(dotenv_path)
 
 
 class Settings:
