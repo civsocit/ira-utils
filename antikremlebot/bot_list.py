@@ -52,7 +52,7 @@ class AntiIraApi:
         """
         if not isfile(path):
             return []
-        with open(path, "r") as file:
+        with open(path, "r", encoding="utf-8") as file:
             return list(
                 {  # повторяющиеся фразы будут удалены
                     line.strip()
