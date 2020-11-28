@@ -63,7 +63,7 @@ async def main(api_key: str, video_date: date, video: Optional[str] = None):
     stat = get_statistics(comments, bot_list)
 
     # И экспортировать её
-    export_statistics(stat, datetime.now().strftime("stat_%Y-%m-%d_%H:%M:%S:%f.csv"))
+    export_statistics(stat, datetime.now().strftime("stat_%Y-%m-%d_%H%M%S.csv"))
 
     logging.info("Done")
 
