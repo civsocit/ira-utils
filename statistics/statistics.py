@@ -35,7 +35,11 @@ def get_statistics(
     """
     stat = dict()
     for comment in comments:
-        if comment.author in ignore_users:  # Это бот, игнорировать его
+        # Это бот, игнорировать его
+        if comment.author in ignore_users:
+            continue
+        # Это канал комментирует сам себя, игнорировать
+        if comment.author == comment.channel:
             continue
         if comment.author not in stat:
             stat[comment.author] = dict()
