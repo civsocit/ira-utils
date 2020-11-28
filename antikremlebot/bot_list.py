@@ -44,20 +44,38 @@ class AntiIraApi:
         ]
 
     @classmethod
+    def _read_file_list(cls, path: str) -> List[str]:
+        """
+        Прочитать абстрактный список из файла
+        :param path:
+        :return:
+        """
+        if not isfile(path):
+            return []
+        with open(path, "r") as file:
+            return list(
+                {  # повторяющиеся фразы будут удалены
+                    line.strip()
+                    for line in file.readlines()
+                    if line.strip() and not line.startswith("#")
+                }
+            )
+
+    @classmethod
     def get_channels_list(cls) -> List[str]:
         """
         Получить список идентификаторв youtube каналов для мониторинга
         :return: Список каналов
         """
-        filename = "channels.txt"
-        if not isfile(filename):
-            raise ValueError("Файл channels.txt со списком каналов должен лежать рядом")
-        with open(filename, "r") as file:
-            return [
-                line.strip()
-                for line in file.readlines()
-                if line and not line.startswith("#")
-            ]
+        return cls._read_file_list("channels.txt")
+
+    @classmethod
+    def get_videos_list(cls) -> List[str]:
+        """
+        Получить список идентификаторов youtube видео для мониторинга
+        :return: Список видео
+        """
+        return cls._read_file_list("videos.txt")
 
 
 async def main():

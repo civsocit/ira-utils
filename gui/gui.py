@@ -30,13 +30,6 @@ class Gui:
         tk.Entry(master=self._root, textvariable=self._api, width=40).pack()
         self._api.set(Settings.api_key())
 
-        label = tk.Label(width=40)
-        label["text"] = "ID Видео (для одного видео):"
-        label.pack()
-
-        self._video = tk.StringVar()
-        tk.Entry(master=self._root, textvariable=self._video, width=40).pack()
-
         self._start_btn = tk.Button(
             master=self._root, text="Начать", command=lambda: run_callback(self)
         )

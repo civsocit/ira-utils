@@ -5,7 +5,7 @@ import asyncio
 from asyncio import get_event_loop
 from dataclasses import dataclass
 from datetime import datetime
-from typing import AsyncGenerator, Dict, List, Optional
+from typing import AsyncGenerator, Dict, Iterable, List, Optional
 
 from aiohttp import ClientSession
 
@@ -86,7 +86,42 @@ class YouTubeApi:
 
         return data
 
-    async def list_videos(
+    async def list_videos_by_ids(
+        self, ids: Iterable[str], page_id: Optional[str] = None
+    ) -> List[ChannelVideo]:
+        """
+        Получить идентификатор канала для каждого видео из списка
+        :param ids: идентификаторы видео
+        :param page_id: идентификатор страницы загрузки (нужно в рекурсии для многостраничной загрузки, если
+                        видео много)
+        :return: Список видео (с идентификаторами каналов)
+        """
+        link = "https://www.googleapis.com/youtube/v3/videos"
+        params = {
+            "key": self._key,
+            "part": "snippet",
+            "maxResults": 500,
+            "id": ",".join(ids),
+        }
+
+        if page_id:
+            params["pageToken"] = page_id
+
+        data = await self._api_get(link, params)
+
+        videos = [
+            ChannelVideo(video["snippet"]["channelId"], video["id"])
+            for video in data["items"]
+            if "video" in video["kind"]
+        ]
+
+        # Видео много, нужно скачать их со следующей страницы
+        if "nextPageToken" in data:
+            return videos + await self.list_videos_by_ids(ids, data["nextPageToken"])
+
+        return videos
+
+    async def list_videos_by_channel(
         self,
         channel: str,
         date_clamp: Optional[datetime] = None,
@@ -116,10 +151,9 @@ class YouTubeApi:
             if "video" in video["id"]["kind"]
         ]
 
-        if (
-            "nextPageToken" in data
-        ):  # Видео много, нужно скачать их со следующей страницы
-            return videos + await self.list_videos(
+        # Видео много, нужно скачать их со следующей страницы
+        if "nextPageToken" in data:
+            return videos + await self.list_videos_by_channel(
                 channel, date_clamp, data["nextPageToken"]
             )
 
@@ -174,9 +208,9 @@ class YouTubeApi:
 
         for raw_comment in data["items"]:
             yield self.__to_comment(raw_comment, channel, video)
-        if (
-            "nextPageToken" in data
-        ):  # Комментариев много, нужно скачать их со следующей страницы
+
+        # Комментариев много, нужно скачать их со следующей страницы
+        if "nextPageToken" in data:
             async for comment in self.list_child_comments(
                 parent, channel, video, data["nextPageToken"]
             ):
@@ -255,7 +289,7 @@ async def main():
     async with _SessionWrap() as session:
         api = YouTubeApi(Settings.api_key(), session)
         channel = "UCWjEiMNZv4g3P9BWbrtMjyA"
-        videos = await api.list_videos(channel)
+        videos = await api.list_videos_by_channel(channel)
         videos = videos[:3]
 
         await asyncio.gather(

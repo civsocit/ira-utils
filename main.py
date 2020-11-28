@@ -3,7 +3,7 @@ import logging
 from datetime import date, datetime
 from itertools import chain
 from statistics import export_statistics, get_statistics
-from typing import Iterable, Optional
+from typing import Iterable, List, Optional
 
 from aiohttp import ClientSession
 
@@ -12,12 +12,11 @@ from gui import Gui
 from youtube import ChannelVideo, Comment, YouTubeApi
 
 
-async def main(api_key: str, video_date: date, video: Optional[str] = None):
+async def main(api_key: str, video_date: date):
     """
     Запустить алгоритм выгрузки и анализа
     :param api_key: google API ключ
     :param video_date: отсечка по дате публикации видео
-    :param video: идентификатор видео (если нужно проанализировать всего лишь одно видео)
     :return:
     """
     async with ClientSession() as session:
@@ -27,31 +26,34 @@ async def main(api_key: str, video_date: date, video: Optional[str] = None):
 
         youtube_api = YouTubeApi(api_key, session)
 
-        if video:
-            # В интерфейсе указали конкретное видео - нужно анализировать его
-            videos = [ChannelVideo("none", video)]
-            logging.info("Use single video " + video)
-        else:
-            logging.info("Use channels.txt list")
-            # Взять список каналов для анализа
-            channels = AntiIraApi.get_channels_list()
-            video_datetime = datetime(video_date.year, video_date.month, video_date.day)
+        # Взять список каналов для анализа
+        channels = AntiIraApi.get_channels_list()
+        video_datetime = datetime(video_date.year, video_date.month, video_date.day)
 
-            # Скачать идентификаторы видео для каждого канала
-            tasks = [
-                youtube_api.list_videos(channel, video_datetime) for channel in channels
-            ]
-            videos_groups = await asyncio.gather(*tasks)
-            for channel, videos_in_channel in zip(channels, videos_groups):
-                logging.info(
-                    "Channel "
-                    + channel
-                    + " has "
-                    + str(len(videos_in_channel))
-                    + " videos"
-                )
-            videos: Iterable[ChannelVideo] = chain(*videos_groups)
+        logging.info("Fetch channels...")
+        # Скачать идентификаторы видео для каждого канала
+        tasks = [
+            youtube_api.list_videos_by_channel(channel, video_datetime)
+            for channel in channels
+        ]
+        videos_groups = await asyncio.gather(*tasks)
+        for channel, videos_in_channel in zip(channels, videos_groups):
+            logging.info(
+                "Channel " + channel + " has " + str(len(videos_in_channel)) + " videos"
+            )
+        videos: Iterable[ChannelVideo] = chain(*videos_groups)
 
+        # Теперь добавить для анализа видео из списка videos.txt
+        additional_video_ids = AntiIraApi.get_videos_list()
+        # (и убрать из списка уже найденные на каналах видео)
+        additional_video_ids = set(additional_video_ids) - {
+            video.code for video in videos
+        }
+        videos = chain(
+            videos, await youtube_api.list_videos_by_ids(additional_video_ids)
+        )
+
+        logging.info("Fetch comments...")
         # Теперь найти комментарии под каждым видео
         tasks = [
             youtube_api.list_comments_full_list(video.code, video.channel)
@@ -78,7 +80,7 @@ def run_callback(window: Gui):
     loop = asyncio.get_event_loop()
 
     # Добавить задачу на выгрузку данных
-    loop.create_task(main(window.api, window.date, window.video))
+    loop.create_task(main(window.api, window.date))
 
 
 def close_callback():

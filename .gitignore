@@ -1,5 +1,5 @@
 # Выходные файлы
-stat.csv
+stat_*.csv
 
 # PyCharm
 .idea
