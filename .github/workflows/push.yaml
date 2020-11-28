@@ -16,6 +16,8 @@ jobs:
       - name: Build
         run: |
           python -m poetry run pyinstaller main.py --clean -F --hidden-import babel.numbers
+          cp channels.txt dist/
+          cp videos.txt dist/
       - name: Get current date
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
@@ -24,7 +26,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ira-win-${{ steps.date.outputs.date }}
-          path: dist/main.exe channels.txt videos.txt
+          path: dist
   build-lin:
     runs-on: ubuntu-16.04
     steps:
@@ -40,6 +42,8 @@ jobs:
       - name: Build
         run: |
           python -m poetry run pyinstaller main.py --clean -F --hidden-import babel.numbers
+          cp channels.txt dist/
+          cp videos.txt dist/
       - name: Get current date
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
@@ -47,4 +51,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ira-deb-${{ steps.date.outputs.date }}
-          path: dist/main channels.txt videos.txt
+          path: dist
