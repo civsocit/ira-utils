@@ -45,10 +45,7 @@ async def main(api_key: str, video_date: date):
 
         # Теперь добавить для анализа видео из списка videos.txt
         additional_video_ids = AntiIraApi.get_videos_list()
-        # (и убрать из списка уже найденные на каналах видео)
-        additional_video_ids = set(additional_video_ids) - {
-            video.code for video in videos
-        }
+        # TODO: убирать из списка уже найденные на каналах видео
         videos = chain(
             videos, await youtube_api.list_videos_by_ids(additional_video_ids)
         )
