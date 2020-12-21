@@ -43,7 +43,7 @@ def get_statistics(
         if ignore_users and comment.author in ignore_users:
             continue
         # Пользователь не из списка, игнорировать
-        if use_only_users and comment not in use_only_users:
+        if use_only_users and comment.author not in use_only_users:
             continue
         # Это канал комментирует сам себя, игнорировать
         if comment.author == comment.channel:
