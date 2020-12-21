@@ -13,7 +13,7 @@ from aiohttp import ClientSession
 from settings import Settings
 
 # TODO: не использовать рекурсию вообще при проходе по страницам
-sys.setrecursionlimit(2000)
+sys.setrecursionlimit(5000)
 
 
 @dataclass
