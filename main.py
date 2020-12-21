@@ -9,6 +9,7 @@ from aiohttp import ClientSession
 
 from antikremlebot import AntiIraApi
 from gui import Gui
+from settings import Settings
 from youtube import ChannelVideo, Comment, YouTubeApi
 
 
@@ -55,7 +56,9 @@ async def main(
         logging.info("Fetch comments...")
         # Теперь найти комментарии под каждым видео
         tasks = [
-            youtube_api.list_comments_full_list(video.code, video.channel)
+            youtube_api.list_comments_full_list(
+                video.code, video.channel, Settings.comments_limit()
+            )
             for video in videos
         ]
         comments: Iterable[Comment] = chain(*await asyncio.gather(*tasks))

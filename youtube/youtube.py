@@ -2,6 +2,7 @@
 Этот модуль использует YouTube API чтобы вытаскивать комментарии под видео, а также искать видео в каналах
 """
 import asyncio
+import sys
 from asyncio import get_event_loop
 from dataclasses import dataclass
 from datetime import datetime
@@ -10,6 +11,9 @@ from typing import AsyncGenerator, Dict, Iterable, List, Optional
 from aiohttp import ClientSession
 
 from settings import Settings
+
+# TODO: не использовать рекурсию вообще при проходе по страницам
+sys.setrecursionlimit(2000)
 
 
 @dataclass
@@ -211,6 +215,7 @@ class YouTubeApi:
 
         # Комментариев много, нужно скачать их со следующей страницы
         if "nextPageToken" in data:
+            print("child " + data["nextPageToken"])
             async for comment in self.list_child_comments(
                 parent, channel, video, data["nextPageToken"]
             ):
@@ -263,18 +268,25 @@ class YouTubeApi:
         if (
             "nextPageToken" in data
         ):  # Комментариев много, нужно скачать их со следующей страницы
+            print(data["nextPageToken"])
             async for comment in self.list_comments(
                 video, channel, data["nextPageToken"]
             ):
                 yield comment
 
-    async def list_comments_full_list(self, video: str, channel: str) -> List[Comment]:
+    async def list_comments_full_list(
+        self, video: str, channel: str, limit: Optional[int] = None
+    ) -> List[Comment]:
         """
         То же, что и list_comments, но стащить сразу весь лист, без генераторов
         """
         comments = []
+        count = 0
         async for comment in self.list_comments(video, channel):
             comments.append(comment)
+            count += 1
+            if limit and count > limit:
+                break
         return comments
 
 

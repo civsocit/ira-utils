@@ -18,3 +18,7 @@ class Settings:
             "SMM": "https://raw.githubusercontent.com/FeignedAccomplice/YOUTUBOTS/master/SMM.CSV",
             "KB": "https://raw.githubusercontent.com/FeignedAccomplice/YOUTUBOTS/master/KB.CSV",
         }
+
+    @classmethod
+    def comments_limit(cls) -> int:
+        return int(getenv("COMMENTS_LIMIT", 0))
