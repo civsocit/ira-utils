@@ -52,10 +52,17 @@ def test_ignore_channel_comments_on_itself():
     assert "UC5DqQh9__HKLd_HpDAXxsVw" not in stats
 
 
-def test_igore_comments_of_secified_users():
-    stats = get_statistics(comments, ["UCv3WZQIAXeprUopgMDWLvmQ"])
+def test_ignore_comments_of_specified_users():
+    stats = get_statistics(comments, ignore_users=["UCv3WZQIAXeprUopgMDWLvmQ"])
 
     assert "UCv3WZQIAXeprUopgMDWLvmQ" not in stats
+
+
+def test_ignore_comments_of_not_specified_users():
+    stats = get_statistics(comments, use_only_users=["UCSTJ4D8krCXQLq3_-V9ZYWg"])
+
+    assert len(stats.keys()) == 1
+    assert list(stats.keys())[0] == "UCSTJ4D8krCXQLq3_-V9ZYWg"
 
 
 def test_export_to_csv(mocker):

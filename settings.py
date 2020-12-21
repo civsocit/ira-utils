@@ -1,5 +1,5 @@
 from os import getenv
-from typing import Iterable
+from typing import Dict
 
 from dotenv import find_dotenv, load_dotenv
 
@@ -13,8 +13,8 @@ class Settings:
         return getenv("YOUTUBE_API_KEY")
 
     @classmethod
-    def bot_list_links(cls) -> Iterable[str]:
-        return (
-            "https://raw.githubusercontent.com/FeignedAccomplice/YOUTUBOTS/master/SMM.CSV",
-            "https://raw.githubusercontent.com/FeignedAccomplice/YOUTUBOTS/master/KB.CSV",
-        )
+    def bot_list_links(cls) -> Dict[str, str]:
+        return {
+            "SMM": "https://raw.githubusercontent.com/FeignedAccomplice/YOUTUBOTS/master/SMM.CSV",
+            "KB": "https://raw.githubusercontent.com/FeignedAccomplice/YOUTUBOTS/master/KB.CSV",
+        }

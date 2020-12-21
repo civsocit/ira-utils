@@ -3,7 +3,7 @@ import re
 from dataclasses import dataclass
 from datetime import date
 from os.path import isfile
-from typing import List
+from typing import List, Optional
 
 from aiohttp import ClientSession
 
@@ -29,14 +29,17 @@ class AntiIraApi:
         async with self._session.get(link) as resp:
             return await resp.text()
 
-    async def get_bot_list(self) -> List[Bot]:
+    async def get_bot_list(self, categories: Optional[List[str]] = None) -> List[Bot]:
         """
         Получить список известных youtube кремлеботов
         :return: Список ботов
         """
-        texts = await asyncio.gather(
-            *[self._request(link) for link in Settings.bot_list_links()]
-        )
+        if categories:
+            links = [Settings.bot_list_links()[c] for c in categories]
+        else:  # Боты всех категорий по-умолчанию
+            links = Settings.bot_list_links().values()
+
+        texts = await asyncio.gather(*[self._request(link) for link in links])
         text = "\n".join(texts)
         return [
             Bot(r[0], date.fromisoformat(r[1]))

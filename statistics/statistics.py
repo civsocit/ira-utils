@@ -1,5 +1,5 @@
 import csv
-from typing import Dict, Iterable
+from typing import Dict, Iterable, Optional
 
 from youtube import Comment
 
@@ -25,18 +25,25 @@ Statistics = Dict[str, Dict[str, int]]
 
 
 def get_statistics(
-    comments: Iterable[Comment], ignore_users: Iterable[str]
+    comments: Iterable[Comment],
+    ignore_users: Optional[Iterable[str]] = None,
+    use_only_users: Optional[Iterable[str]] = None,
 ) -> Statistics:
     """
     Собрать статистику по комментариям из аргумента
     :param comments: асинхронный генератор, берёт комментарии по одному
     :param ignore_users: список пользователей, которых нужно игнорировать
+    :param use_only_users: список пользователей для составления статистики; пользователи не из списка будут
+                           игнорироваться
     :return: Статистика
     """
     stat = dict()
     for comment in comments:
         # Это бот, игнорировать его
-        if comment.author in ignore_users:
+        if ignore_users and comment.author in ignore_users:
+            continue
+        # Пользователь не из списка, игнорировать
+        if use_only_users and comment not in use_only_users:
             continue
         # Это канал комментирует сам себя, игнорировать
         if comment.author == comment.channel:

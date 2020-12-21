@@ -12,7 +12,9 @@ from gui import Gui
 from youtube import ChannelVideo, Comment, YouTubeApi
 
 
-async def main(api_key: str, video_date: date):
+async def main(
+    api_key: str, video_date: date, bot_groups: List[str], ignore_bots: bool
+):
     """
     Запустить алгоритм выгрузки и анализа
     :param api_key: google API ключ
@@ -22,7 +24,7 @@ async def main(api_key: str, video_date: date):
     async with ClientSession() as session:
         # Взять список ботов
         bot_list_fetcher = AntiIraApi(session)
-        bot_list = [bot.user for bot in await bot_list_fetcher.get_bot_list()]
+        bot_list = [bot.user for bot in await bot_list_fetcher.get_bot_list(bot_groups)]
 
         youtube_api = YouTubeApi(api_key, session)
 
@@ -59,7 +61,10 @@ async def main(api_key: str, video_date: date):
         comments: Iterable[Comment] = chain(*await asyncio.gather(*tasks))
 
     # Теперь собрать статистику по комментариям!
-    stat = get_statistics(comments, bot_list)
+    if ignore_bots:
+        stat = get_statistics(comments, ignore_users=bot_list)
+    else:
+        stat = get_statistics(comments, use_only_users=bot_list)
 
     # И экспортировать её
     export_statistics(stat, datetime.now().strftime("stat_%Y-%m-%d_%H%M%S.csv"))
@@ -77,7 +82,9 @@ def run_callback(window: Gui):
     loop = asyncio.get_event_loop()
 
     # Добавить задачу на выгрузку данных
-    loop.create_task(main(window.api, window.date))
+    loop.create_task(
+        main(window.api, window.date, window.selected_bot_groups, window.ignore_bots)
+    )
 
 
 def close_callback():

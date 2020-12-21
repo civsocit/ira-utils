@@ -1,7 +1,7 @@
 import tkinter as tk
 from asyncio import sleep
 from datetime import date
-from typing import Callable
+from typing import Callable, List
 
 from tkcalendar import DateEntry
 
@@ -30,6 +30,28 @@ class Gui:
         tk.Entry(master=self._root, textvariable=self._api, width=40).pack()
         self._api.set(Settings.api_key())
 
+        self._bots_frame = tk.LabelFrame(self._root, text="Группы ботов", width=40)
+
+        self._bot_groups = dict()
+
+        for bot_group in Settings.bot_list_links().keys():
+            self._bot_groups[bot_group] = tk.IntVar(value=0)
+            check = tk.Checkbutton(
+                self._bots_frame,
+                text=bot_group,
+                width=38,
+                variable=self._bot_groups[bot_group],
+            )
+            check.pack()
+
+        self._bots_frame.pack(padx=5, pady=5)
+
+        self._bot_list_inverted = tk.IntVar(value=0)
+        inverter = tk.Checkbutton(
+            text="Только из указанных списков", variable=self._bot_list_inverted
+        )
+        inverter.pack()
+
         self._start_btn = tk.Button(
             master=self._root, text="Начать", command=lambda: run_callback(self)
         )
@@ -45,12 +67,16 @@ class Gui:
         return self._date.get_date()
 
     @property
-    def api(self) -> str:
-        return self._api.get()
+    def ignore_bots(self) -> bool:
+        return not bool(self._bot_list_inverted.get())
 
     @property
-    def video(self):
-        return self._video.get()
+    def selected_bot_groups(self) -> List[str]:
+        return [key for key, value in self._bot_groups.items() if value.get()]
+
+    @property
+    def api(self) -> str:
+        return self._api.get()
 
     async def run(self):
         # По образцу https://gist.github.com/Lucretiel/e7d9a50b7b1960a56a1c
