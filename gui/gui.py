@@ -3,6 +3,7 @@ from asyncio import sleep
 from datetime import date
 from typing import Callable, List
 
+from idlelib.tooltip import Hovertip
 from tkcalendar import DateEntry
 
 from settings import Settings
@@ -22,15 +23,26 @@ class Gui:
         self._date = DateEntry(master=self._root, width=38)
         self._date.pack()
 
+        Hovertip(
+            self._date,
+            text="Программа будет искать видео на каналах из списка channels.txt, которые вышли \n"
+            "после указанной даты. На анализ видео из списка videos.txt этот параметр не влияет",
+        )
+
         label = tk.Label(width=40)
         label["text"] = "Google API ключ:"
         label.pack()
 
         self._api = tk.StringVar()
-        tk.Entry(master=self._root, textvariable=self._api, width=40).pack()
+        key_entry = tk.Entry(master=self._root, textvariable=self._api, width=40)
+        key_entry.pack()
         self._api.set(Settings.api_key())
+        Hovertip(key_entry, text="Ваш Google API Key для доступа к YouTube")
 
         self._bots_frame = tk.LabelFrame(self._root, text="Группы ботов", width=40)
+        Hovertip(
+            self._bots_frame, "Какие категории ботов будут учитываться при анализе"
+        )
 
         self._bot_groups = dict()
 
@@ -51,6 +63,12 @@ class Gui:
             text="Только из указанных списков", variable=self._bot_list_inverted
         )
         inverter.pack()
+        Hovertip(
+            inverter,
+            "Если этот пункт выбран, в статистике будут учитываться только акаунты ботов из выбранных\n"
+            "выше списков (групп). Если этот пункт не выбран, в статистике будут учитываться аккаунты\n"
+            "всех пользователей, кроме тех, которые есть в выбранных списках",
+        )
 
         self._start_btn = tk.Button(
             master=self._root, text="Начать", command=lambda: run_callback(self)
