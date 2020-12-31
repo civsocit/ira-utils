@@ -34,7 +34,7 @@ class AntiIraApi:
         Получить список известных youtube кремлеботов
         :return: Список ботов
         """
-        if categories:
+        if categories is not None:
             links = [Settings.bot_list_links()[c] for c in categories]
         else:  # Боты всех категорий по-умолчанию
             links = Settings.bot_list_links().values()
