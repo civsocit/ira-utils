@@ -27,6 +27,16 @@ class Comment:
     id: str
 
 
+@dataclass
+class ChannelInfo:
+    channel: str  # Идентификатор канала
+    registration_date: datetime  # Дата регистрации
+    video_count: int  # Количество роликов на канале
+    title: str  # Название
+    subscribers_count: int  # Количество подписчиков
+    view_count: int  # Количество просмотров
+
+
 class _SessionWrap(ClientSession):
     """
     Этот класс может пригодиться для отладки расходов по квотам API.
@@ -119,6 +129,31 @@ class YouTubeApi:
                 break
 
         return videos
+
+    async def get_channel_info(self, channel: str) -> ChannelInfo:
+        """
+        Получить информацию по каналу
+        :param channel: ID канала
+        :return: информация
+        """
+
+        link = "https://www.googleapis.com/youtube/v3/channels"
+        params = {"key": self._key, "id": channel, "part": "snippet,statistics"}
+
+        data = await self._api_get(link, params)
+        item = data["items"][0]
+
+        info = ChannelInfo(
+            channel=channel,
+            registration_date=datetime.strptime(
+                item["snippet"]["publishedAt"], "%Y-%m-%dT%H:%M:%SZ"
+            ),
+            video_count=int(item["statistics"]["videoCount"]),
+            title=item["snippet"]["title"],
+            subscribers_count=int(item["statistics"]["subscriberCount"]),
+            view_count=int(item["statistics"]["viewCount"]),
+        )
+        return info
 
     async def list_videos_by_channel(
         self,
