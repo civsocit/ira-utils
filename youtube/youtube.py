@@ -2,6 +2,7 @@
 Этот модуль использует YouTube API чтобы вытаскивать комментарии под видео, а также искать видео в каналах
 """
 import asyncio
+import re
 from asyncio import get_event_loop
 from dataclasses import dataclass
 from datetime import datetime
@@ -130,7 +131,7 @@ class YouTubeApi:
 
         return videos
 
-    async def get_channel_info(self, channel: str) -> ChannelInfo:
+    async def get_channel_info(self, channel: str) -> Optional[ChannelInfo]:
         """
         Получить информацию по каналу
         :param channel: ID канала
@@ -141,16 +142,23 @@ class YouTubeApi:
         params = {"key": self._key, "id": channel, "part": "snippet,statistics"}
 
         data = await self._api_get(link, params)
+
+        if "items" not in data:
+            return None  # Нет такого канала
+
         item = data["items"][0]
+
+        date_str = re.match(
+            "\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", item["snippet"]["publishedAt"]
+        )[0]
+        date = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S")
 
         info = ChannelInfo(
             channel=channel,
-            registration_date=datetime.strptime(
-                item["snippet"]["publishedAt"], "%Y-%m-%dT%H:%M:%SZ"
-            ),
+            registration_date=date,
             video_count=int(item["statistics"]["videoCount"]),
             title=item["snippet"]["title"],
-            subscribers_count=int(item["statistics"]["subscriberCount"]),
+            subscribers_count=int(item["statistics"].get("subscriberCount", -1)),
             view_count=int(item["statistics"]["viewCount"]),
         )
         return info
