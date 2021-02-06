@@ -70,6 +70,17 @@ class Gui:
             "всех пользователей, кроме тех, которые есть в выбранных списках",
         )
 
+        self._video_stat = tk.IntVar(value=0)
+        video_stat = tk.Checkbutton(
+            text="Распределять по видео", variable=self._video_stat
+        )
+        video_stat.pack()
+        Hovertip(
+            video_stat,
+            "Если этот пункт выбран, в статистике будет распределение комментариев по видеороликам, а не только "
+            "по каналам",
+        )
+
         self._start_btn = tk.Button(
             master=self._root, text="Начать", command=lambda: run_callback(self)
         )
@@ -91,6 +102,10 @@ class Gui:
     @property
     def selected_bot_groups(self) -> List[str]:
         return [key for key, value in self._bot_groups.items() if value.get()]
+
+    @property
+    def video_stat(self):
+        return bool(self._video_stat.get())
 
     @property
     def api(self) -> str:

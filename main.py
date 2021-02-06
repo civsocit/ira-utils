@@ -2,7 +2,8 @@ import asyncio
 import logging
 from datetime import date, datetime
 from itertools import chain
-from statistics import export_statistics, get_statistics
+from statistics import (export_comments_text_statistics, export_statistics,
+                        get_comments_text_statistics, get_statistics)
 from typing import Iterable, List, Optional
 
 from aiohttp import ClientSession
@@ -14,12 +15,19 @@ from youtube import ChannelVideo, Comment, YouTubeApi
 
 
 async def main(
-    api_key: str, video_date: date, bot_groups: List[str], ignore_bots: bool
+    api_key: str,
+    video_date: date,
+    bot_groups: List[str],
+    ignore_bots: bool,
+    export_videos: bool = False,
 ):
     """
     Запустить алгоритм выгрузки и анализа
     :param api_key: google API ключ
     :param video_date: отсечка по дате публикации видео
+    :param bot_groups: группы ботов, статистику по которым нужно собрать
+    :param ignore_bots: группы ботов, которых нужно игнорировать в статистике
+    :param export_videos: экспортировать статистику по видео
     :return:
     """
     async with ClientSession() as session:
@@ -61,7 +69,7 @@ async def main(
             )
             for video in videos
         ]
-        comments: Iterable[Comment] = chain(*await asyncio.gather(*tasks))
+        comments: Iterable[Comment] = list(chain(*await asyncio.gather(*tasks)))
 
     # Теперь собрать статистику по комментариям!
     if ignore_bots:
@@ -70,7 +78,17 @@ async def main(
         stat = get_statistics(comments, use_only_users=bot_list)
 
     # И экспортировать её
-    export_statistics(stat, datetime.now().strftime("stat_%Y-%m-%d_%H%M%S.csv"))
+    export_statistics(
+        stat,
+        datetime.now().strftime("stat_%Y-%m-%d_%H%M%S.csv"),
+        export_videos=export_videos,
+    )
+
+    # И ещё сохранить сами тексты комментариев
+    export_comments_text_statistics(
+        get_comments_text_statistics(comments),
+        datetime.now().strftime("comments_%Y-%m-%d_%H%M%S.csv"),
+    )
 
     logging.info("Done")
 
@@ -86,7 +104,13 @@ def run_callback(window: Gui):
 
     # Добавить задачу на выгрузку данных
     loop.create_task(
-        main(window.api, window.date, window.selected_bot_groups, window.ignore_bots)
+        main(
+            window.api,
+            window.date,
+            window.selected_bot_groups,
+            window.ignore_bots,
+            window.video_stat,
+        )
     )
 
 

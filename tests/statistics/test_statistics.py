@@ -42,8 +42,14 @@ comments = [
 def test_comments_counter():
     stats = get_statistics(comments, [])
 
-    assert stats["UCv3WZQIAXeprUopgMDWLvmQ"]["UC5DqQh9__HKLd_HpDAXxsVw"] == 2
-    assert stats["UCSTJ4D8krCXQLq3_-V9ZYWg"]["UC5DqQh9__HKLd_HpDAXxsVw"] == 1
+    assert (
+        stats["UCv3WZQIAXeprUopgMDWLvmQ"]["UC5DqQh9__HKLd_HpDAXxsVw"]["verpkNic3SM"]
+        == 2
+    )
+    assert (
+        stats["UCSTJ4D8krCXQLq3_-V9ZYWg"]["UC5DqQh9__HKLd_HpDAXxsVw"]["verpkNic3SM"]
+        == 1
+    )
 
 
 def test_ignore_channel_comments_on_itself():
