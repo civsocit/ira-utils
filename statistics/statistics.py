@@ -80,15 +80,14 @@ def export_statistics(stat: Statistics, path: str, export_videos: bool = False):
     """
     with open(path, "w", encoding="utf-8") as file:
         writer = csv.writer(file, delimiter="\t")
+        writer.writerow(["user_id", "channel", "video", "comments"])
 
         if not export_videos:
-            writer.writerow(["user_id", "channel", "comments"])
             for user, channels in stat.items():
                 for channel, videos in channels.items():
                     total_channel_count = sum(videos.values())
-                    writer.writerow([user, channel, total_channel_count])
+                    writer.writerow([user, channel, "", total_channel_count])
         else:
-            writer.writerow(["user_id", "channel", "video", "comments"])
             for user, channels in stat.items():
                 for channel, videos in channels.items():
                     for video, count in videos.items():
