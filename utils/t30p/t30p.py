@@ -12,6 +12,7 @@ from aiohttp import ClientSession
 
 SEARCH_URL = 'https://www.t30p.ru/sd.asmx/MoreSearch'
 RE_LINK = re.compile(r'href=\"http://youtube\.com/watch\?v=([\w-]+)&amp;lc=')
+semaphore = asyncio.Semaphore(10)
 
 
 async def fetch(client: ClientSession, user_id: str, pos: int = 0) -> Tuple[str, str]:
@@ -21,7 +22,7 @@ async def fetch(client: ClientSession, user_id: str, pos: int = 0) -> Tuple[str,
         'numeration': '0'
     }
     headers = {'Content-Type': 'application/json; charset=utf-8'}
-    async with client.get(SEARCH_URL, params=params, headers=headers) as resp:
+    async with semaphore, client.get(SEARCH_URL, params=params, headers=headers) as resp:
         data = await resp.json()
         page: str = data['d']
         if page:
