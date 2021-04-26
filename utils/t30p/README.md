@@ -8,3 +8,8 @@ t30p
 $ pip3 install -r ./requirements.txt
 $ python3 t30p.py
 ```
+
+## Сборка в .exe
+```shell script
+$ python3 setup.py py2exe
+```
