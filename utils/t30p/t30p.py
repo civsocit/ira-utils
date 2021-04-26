@@ -24,12 +24,12 @@ async def fetch(client: ClientSession, user_id: str, pos: int = 0) -> Tuple[str,
     headers = {'Content-Type': 'application/json; charset=utf-8'}
     async with semaphore, client.get(SEARCH_URL, params=params, headers=headers) as resp:
         data = await resp.json()
-        page: str = data['d']
-        if page:
-            next_page = await fetch(client, user_id, pos + 30)
-            return user_id, page + next_page[1]
-        else:
-            return user_id, page
+    page: str = data['d']
+    if page:
+        next_page = await fetch(client, user_id, pos + 30)
+        return user_id, page + next_page[1]
+    else:
+        return user_id, page
 
 
 async def main(infile: io.TextIOWrapper, outfile: io.TextIOWrapper) -> None:
